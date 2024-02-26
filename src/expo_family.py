@@ -9,6 +9,7 @@ import functools
 
 import jax
 import jax.numpy as jnp
+from jax.scipy import optimize
 from numpy.typing import ArrayLike
 
 
@@ -178,3 +179,32 @@ class ConjugateFamily(ExponentialFamily):
         return -1 * jax.hessian(self.unnormalized_log_pdf, argnums=0)(
             jnp.asarray(mode), natural_params
         )
+
+    def map_estimate(
+        self,
+        prior_natural_params: ArrayLike | jnp.ndarray,
+        data: ArrayLike | jnp.ndarray,
+        initial_guess: ArrayLike | jnp.ndarray | None = None,
+    ) -> jnp.ndarray:
+        """
+        Computes a map estimate using the unnormalized log_pdf
+        """
+        assert len(jnp.asarray(prior_natural_params).shape) == 1
+        sufficient_statistics = self._likelihood.posterior_parameters(
+            prior_natural_params, data
+        )
+        coefficient = (
+            sufficient_statistics[0][..., None] / sufficient_statistics[1][..., None]
+        )
+
+        def loss(w):
+            return (
+                self._likelihood.log_partition(w)
+                - jnp.sum(coefficient[..., None] * w, axis=-1)
+            ).sum()
+
+        if not initial_guess:
+            initial_guess = jnp.zeros_like(coefficient)
+
+        mode = optimize.minimize(loss, initial_guess, method="BFGS")
+        return mode.x

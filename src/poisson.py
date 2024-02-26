@@ -1,8 +1,13 @@
+"""
+Implementation of Poisson Exp Family
+"""
+
 import jax
 import jax.numpy as jnp
 import matplotlib.pyplot as plt
 from numpy.typing import ArrayLike
 
+# pylint: disable=import-error
 from expo_family import ExponentialFamily
 
 
@@ -59,6 +64,13 @@ if __name__ == "__main__":
         prior_natural_params, data
     )
 
+    mode = jnp.exp(posterior.map_estimate(prior_natural_params, data))
+    neg_hessian = posterior.laplace_precision(posterior_natural_params, mode)
+    cov = jnp.linalg.inv(neg_hessian)
+
+    def gaussian_pdf(x, mean, var):
+        return jnp.exp(-((x - mean) ** 2) / (2 * var)) / (jnp.sqrt(2 * jnp.pi * var))
+
     lambdas = jnp.linspace(0.1, 10, 100)
     plt.title("Bayesian inference with poisson and gamma")
     plt.plot(
@@ -83,6 +95,14 @@ if __name__ == "__main__":
         "-",
         color="red",
         label="posterior",
+        alpha=0.9,
+    )
+    plt.plot(
+        lambdas,
+        gaussian_pdf(lambdas, mode, cov[0]),
+        "-",
+        color="green",
+        label="laplace posterior",
         alpha=0.9,
     )
     plt.legend()
