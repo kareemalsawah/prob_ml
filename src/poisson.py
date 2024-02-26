@@ -10,6 +10,7 @@ class Poisson(ExponentialFamily):
     """
     Implementation of the Poisson distribution.
     """
+
     def __init__(self) -> None:
         super().__init__()
 
@@ -26,8 +27,10 @@ class Poisson(ExponentialFamily):
     def params_to_natural_params(self, params: ArrayLike | jnp.ndarray) -> jnp.ndarray:
         return jnp.log(jnp.asarray(params))
 
-    def conjugate_log_partition(self, alpha: ArrayLike | jnp.ndarray, nu: ArrayLike | jnp.ndarray) -> jnp.ndarray:
-        return jax.scipy.special.gammaln(alpha + 1) - (alpha + 1)*jnp.log(nu)
+    def conjugate_log_partition(
+        self, alpha: ArrayLike | jnp.ndarray, nu: ArrayLike | jnp.ndarray
+    ) -> jnp.ndarray:
+        return jax.scipy.special.gammaln(alpha + 1) - (alpha + 1) * jnp.log(nu)
 
 
 if __name__ == "__main__":
@@ -47,32 +50,40 @@ if __name__ == "__main__":
     likelihood = Poisson()
     prior = likelihood.conjugate_prior()
 
-    prior_natural_params = [1, 1] # alpha, nu
+    prior_natural_params = [1, 1]  # alpha, nu
     data = [5]
-    
+
     posterior = prior
 
-    posterior_natural_params = likelihood.posterior_parameters(prior_natural_params, data)
+    posterior_natural_params = likelihood.posterior_parameters(
+        prior_natural_params, data
+    )
 
     lambdas = jnp.linspace(0.1, 10, 100)
     plt.title("Bayesian inference with poisson and gamma")
-    plt.plot(lambdas,
-             jnp.exp(prior.log_pdf(lambdas[...,None], prior_natural_params)),
-             "-",
-             color="gray",
-             label="prior",
-             alpha=0.9)
-    plt.plot(lambdas,
-             jnp.exp(likelihood.log_pdf(data, lambdas[...,None])),
-             "-",
-             color="blue",
-             label="likelihood",
-             alpha=0.9)
-    plt.plot(lambdas,
-             jnp.exp(posterior.log_pdf(lambdas[...,None], posterior_natural_params)),
-             "-",
-             color="red",
-             label="posterior",
-             alpha=0.9)
+    plt.plot(
+        lambdas,
+        jnp.exp(prior.log_pdf(lambdas[..., None], prior_natural_params)),
+        "-",
+        color="gray",
+        label="prior",
+        alpha=0.9,
+    )
+    plt.plot(
+        lambdas,
+        jnp.exp(likelihood.log_pdf(data, lambdas[..., None])),
+        "-",
+        color="blue",
+        label="likelihood",
+        alpha=0.9,
+    )
+    plt.plot(
+        lambdas,
+        jnp.exp(posterior.log_pdf(lambdas[..., None], posterior_natural_params)),
+        "-",
+        color="red",
+        label="posterior",
+        alpha=0.9,
+    )
     plt.legend()
     plt.show()
